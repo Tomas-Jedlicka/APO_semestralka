@@ -16,6 +16,6 @@ typedef struct position_t{
 } position_t;
 
 typedef struct GameBoard_t{
-    int *array;
+    int **array;
     rectangle_t size;
 } GameBoard_t;
