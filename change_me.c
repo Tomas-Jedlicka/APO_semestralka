@@ -28,8 +28,6 @@ unsigned int COLORS [6] = {
     0xffff, //white
 };
 
-char* DIRECTIONS[4] = {"LEFT", "UP", "RIGHT", "DOWN"};
-
 //==========================================
 //array functions
 //==========================================
@@ -236,25 +234,76 @@ int main(int argc, char *argv[]) {
     mem_base = map_phys_address(SPILED_REG_BASE_PHYS, SPILED_REG_SIZE, 0);
 
 
+    uint32_t rgb_knobs_value = *(volatile uint32_t*)(mem_base + SPILED_REG_KNOBS_8BIT_o);
+    
     if (mem_base == NULL)
         exit(1);
     
     int red;
     int blue;
+    int last_red = ((rgb_knobs_value>>16)&0xff)/4%4;
+    int last_blue = (rgb_knobs_value&0xff)/4%4;
     bool player1Won = false;
     bool player2Won = false;
 
-    uint32_t rgb_knobs_value;
+
+  
 
 
     while (!player1Won && !player2Won) {
 
+        last_red = red;
+        last_blue = blue;
+    
         rgb_knobs_value = *(volatile uint32_t*)(mem_base + SPILED_REG_KNOBS_8BIT_o);
 
-        red = (rgb_knobs_value>>16)&0xff;
-        blue = rgb_knobs_value&0xff;
+        red = ((rgb_knobs_value>>16)&0xff)/4%4;
+        blue = (rgb_knobs_value&0xff)/4%4;
+
+
+        if(last_red < red){
+            if(playerMoving1 != DOWN){
+                playerMoving1 += 1;
+            }
+            else{
+                playerMoving1 = LEFT;
+            }
+        }
+
+        if(last_red > red){
+            if(playerMoving1 != LEFT){
+                playerMoving1 -= 1;
+            }
+            else{
+                playerMoving1 = DOWN;
+            }
+        }
+
+         if(last_blue < blue){
+            if(playerMoving2 != DOWN){
+                playerMoving2 += 1;
+            }
+            else{
+                playerMoving2 = LEFT;
+            }
+        }
+
+        if(last_blue > blue){
+            if(playerMoving2 != LEFT){
+                playerMoving2 -= 1;
+            }
+            else{
+                playerMoving2 = DOWN;
+            }
+        }
+
+
+        
+
+
 
         printf("%d %d\n", red, blue);
+        
 
         parlcd_write_cmd(parlcd_mem_base, 0x2c);
         for (i = 0; i < 320 ; i++) {
@@ -288,7 +337,7 @@ int main(int argc, char *argv[]) {
         }
         switch(speed){
             case 1:
-                usleep(10000000);
+                usleep(100000);
                 break;
             case 2:
                 usleep(50000);
