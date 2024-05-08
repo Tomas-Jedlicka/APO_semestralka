@@ -30,41 +30,40 @@ size_t matrix_array_length(const rectangle_t size)
 
 void matrix_alloc(GameBoard_t *matrix, const rectangle_t size)
 {
-    size_t sizeInBytes = sizeof(GameBoard_t) * matrix_array_length(size);
-    matrix->array = malloc(sizeInBytes);
+
+    matrix->array = malloc(size.rows * sizeof(int *));
     if (matrix->array != NULL)
     {
-        memset(matrix->array, 0, sizeInBytes);
+        for (int i = 0; i < size.rows; i++)
+        {
+            matrix->array[i] = malloc(size.cols * sizeof(int));
+            if (matrix->array[i] == NULL)
+            {
+                printf("Not ok");
+            }
+        }
+        for (int i = 0; i < size.rows; i++)
+        {
+            for (int j = 0; j < size.cols; j++)
+            {
+                matrix->array[i][j] = EMPTY;
+            }
+        }
+
         matrix->size = size;
-        printf("point matrix");
+        printf("All good");
     }
-    else {
-        printf("point null array");
-    }
+
 }
 
-bool matrix_init(GameBoard_t *matrix, const rectangle_t size)
-{
-    memset(matrix, 0, sizeof(GameBoard_t));
-    printf("point memset");
-    if (matrix_array_length(size) > 0)
-    {
-        matrix_alloc(matrix, size);
-        printf("point init");
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
 
-bool validMove(position_t *position, int x, int y)
+
+bool validMove(position_t *position)
 {
-  if (0 <= position->x + x 
-      && position->x + x < 97 
-      && 0 <= position->y + y
-      && position->y + y < 65)
+  if (0 <= position->x 
+      && position->x  < 97 
+      && 0 <= position->y 
+      && position->y < 65)
     return true;
   else
    return false;
@@ -78,68 +77,66 @@ bool playerMove(GameBoard_t *GameBoard, int playerID, position_t *position, play
 
   switch (playerMovement) {
     case UP:
-    if (GameBoard->array[position->x][position->y - 1] != EMPTY){
-        printf("a");
-      return false;
-    }  
-    else {
-      if (validMove(position, 0, -1))
-      {
-        GameBoard->array[position->x][position->y - 1] = playerID;
-        break;
-      }
-      else 
+        position->y -= 1;
+        if (GameBoard->array[position->x][position->y] != EMPTY){
+            return false;
+        }  
+        else {
+        if (validMove(position))
         {
-        printf("b");
-        return false;
+            GameBoard->array[position->x][position->y] = playerID;
+            break;
         }
-    }  
+        else 
+            {
+            return false;
+            }
+        }  
     case DOWN:
-      if (GameBoard->array[position->x][position->y + 1] != EMPTY)
-        return false;
-      else {
-        if (validMove(position, 0, 1))
-        {
-          GameBoard->array[position->x][position->y + 1] = playerID;
-          break;
-        }
-        else 
-          return false;
-      }  
+        position->y += 1;
+        if (GameBoard->array[position->x][position->y] != EMPTY)
+            return false;
+        else {
+            if (validMove(position))
+            {
+            GameBoard->array[position->x][position->y] = playerID;
+            break;
+            }
+            else 
+            return false;
+        }  
     case LEFT:
-      if (GameBoard->array[position->x - 1][position->y] != EMPTY)
-        return false;
-      else {
-        if (validMove(position, -1, 0))
-        {
-          GameBoard->array[position->x - 1][position->y] = playerID;
-          break;
-        }
-        else 
-          return false;
-      }  
+        position->x -= 1;
+        if (GameBoard->array[position->x][position->y] != EMPTY)
+            return false;
+        else {
+            if (validMove(position))
+            {
+            GameBoard->array[position->x][position->y] = playerID;
+            break;
+            }
+            else 
+            return false;
+        }  
     case RIGHT:
-    if (GameBoard->array[position->x + 1][position->y] != EMPTY)
-      return false;
-    else {
-        if (validMove(position, 1, 0))
-        {
-          GameBoard->array[position->x + 1][position->y] = playerID;
-          break;
-        }
-        else 
-          return false;
-      }     
+        position->x += 1;
+        if (GameBoard->array[position->x][position->y] != EMPTY)
+        return false;
+        else {
+            if (validMove(position))
+            {
+            GameBoard->array[position->x][position->y] = playerID;
+            break;
+            }
+            else 
+            return false;
+        }     
+    }
+    return true; 
   }
-  return true; 
-}
 
-bool makeContact(GameBoard_t *GameBoard, int player1, int player2, position_t *position1, position_t *position2, playerMove_enum playerMoving1, playerMove_enum playerMoving2){
-  if (!playerMove(GameBoard, player1, position1, playerMoving1) || !playerMove(GameBoard, player2, position2, playerMoving2))
-    return false;
-  else
-    return true;
-}
+
+
 
 void setStartingPosition(position_t *positionPlayer1, position_t *positionPlayer2)
 {
@@ -153,6 +150,28 @@ void setStartingPosition(position_t *positionPlayer1, position_t *positionPlayer
 
 }
 
+bool checkColor(int playerColor, int test){
+    if(playerColor < 1 || playerColor > 5){
+        return false;
+    }
+    if(test != 1){
+        return false;
+    }
+    return true;
+}
+
+bool checkSpeed(int speed, int test){
+    if(speed < 1 || speed > 3){
+        return false;
+    }
+    if(test != 1){
+        return false;
+    }
+    return true;
+}
+
+
+
 
 //==========================================
 //main
@@ -160,10 +179,38 @@ void setStartingPosition(position_t *positionPlayer1, position_t *positionPlayer
 
 int main(int argc, char *argv[]) {
 
-    sleep(5);
-    printf("point -1");
-    sleep(3);
+    int player1Color;
+    int player2Color; 
 
+    printf("Colors: 1-Red, 2-Green, 3-Blue, 4-Yellow, 5-White\n");
+    printf("Player 1 choose your color: \n");
+    int r = scanf("%d", &player1Color);
+
+    if(!checkColor(player1Color, r)){
+        fprintf(stderr, "Wrong input for color\n");
+        return 1;
+    }
+    printf("Player 2 choose your color: \n");
+    int q = scanf("%d", &player2Color); 
+    while(player1Color == player2Color){
+        printf("Choose different color than Player 1!\nPlayer 2 choose your color:\n");
+        int q = scanf("%d", &player2Color);
+    }
+    if(!checkColor(player2Color, r)){
+        fprintf(stderr, "Wrong input for color\n");
+        return 1;
+    };
+
+
+    int speed;
+    printf("Speed: 1-Slow, 2-Medium, 3-Fast\n");
+    printf("Choose speed: \n");
+    int test = scanf("%d", &speed);
+    if(!checkSpeed(speed, test)){
+        fprintf(stderr, "Wrong input for speed!\n");
+        return 1;
+    }
+    
     position_t positionPlayer1;
     position_t positionPlayer2;
 
@@ -175,36 +222,47 @@ int main(int argc, char *argv[]) {
     GameBoard.size.rows = ROWS;
     GameBoard.size.cols = COLS;
 
-    if (!matrix_init(&GameBoard, GameBoard.size))
-    {
-        printf("pole not ok\n");
-        return EXIT_FAILURE;
+    matrix_alloc(&GameBoard, GameBoard.size);
+    
+    setStartingPosition(&positionPlayer1, &positionPlayer2);
+    
+    bool player1Won = false;
+    bool player2Won = false;
+    int counter = 0;
+
+    while (!player1Won && !player2Won) {
+        printf("counter = %d\n", counter);
+
+        if (!playerMove(&GameBoard, PLAYER1, &positionPlayer1, playerMoving1)) {
+
+            player2Won = true; 
+            break;
+        }
+
+
+        if (!playerMove(&GameBoard, PLAYER2, &positionPlayer2, playerMoving2)) {
+
+            player1Won = true;
+            break;
+        }
+ 
+        counter += 1;
+        sleep(1);
+        for(int i = 0; i < ROWS; i++){
+            for(int j = 0; j < COLS; j ++){
+                printf("%d", GameBoard.array[i][j]);
+            }
+            printf("\n");    
+        }
+        printf("\n\n");
     }
 
-    printf("point 0");
+    if (player1Won) {
+        printf("Player 1 won!\n");
+    } else if (player2Won) {
+        printf("Player 2 won!\n");
 
-    setStartingPosition(&positionPlayer1, &positionPlayer2);
-    printf("point 1");
-    
-    while(!makeContact(&GameBoard, PLAYER1, PLAYER2, &positionPlayer1, &positionPlayer2, playerMoving1, playerMoving2))
-    {
-        if (!playerMove(&GameBoard, PLAYER1, &positionPlayer1, playerMoving1))
-        {
-        //game over screen - player 2 won
-        printf("player 2 won haha xDDD\n");
-        break;
-        }
-
-        if (!playerMove(&GameBoard, PLAYER2, &positionPlayer2, playerMoving2))
-        {
-        //game over screen - player 1 won
-        printf("player 1 won haha xDDD\n");
-        break;
-        }
-        printf("ok");
-        usleep(100000);
-        //TO-DO -> whole game....
     }
  
-  return 0;
+    return 0;
 }
