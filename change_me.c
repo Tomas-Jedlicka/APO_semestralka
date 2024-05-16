@@ -11,6 +11,7 @@
 #include "mzapo_regs.h"
 #include "font_types.h"
 #include "main.h"
+#include "knobs.h"
 
 #define ROWS 64
 #define COLS 96
@@ -161,6 +162,31 @@ bool checkSpeed(int speed, int test){
     return true;
 }
 
+bool checkKnobs(int last_value, int value, playerMove_enum *playerMoving){
+
+    if(last_value == 0 && value == 3){
+        if(playerMoving != DOWN){
+                playerMoving += 1;
+            }
+            else{
+                playerMoving = LEFT;
+            }
+        return true;
+    }
+    
+    if(last_value == 3 && value == 0){
+        if(playerMoving != LEFT){
+                playerMoving -= 1;
+            }
+            else{
+                playerMoving = DOWN;
+            }
+        return true;
+    }
+  
+    return false;
+}
+
 
 
 
@@ -254,46 +280,57 @@ int main(int argc, char *argv[]) {
 
         last_red = red;
         last_blue = blue;
-    
+      
         rgb_knobs_value = *(volatile uint32_t*)(mem_base + SPILED_REG_KNOBS_8BIT_o);
 
         red = ((rgb_knobs_value>>16)&0xff)/4%4;
         blue = (rgb_knobs_value&0xff)/4%4;
 
+        //bool move1 = checkKnobs(last_red, red, &playerMoving1);  
+        //bool move2 = checkKnobs(last_blue, blue, &playerMoving2); 
+        bool move1 = true;
+        bool move2 = true;
 
-        if(last_red < red){
-            if(playerMoving1 != DOWN){
-                playerMoving1 += 1;
+        printf("%d %d", move1, move2);   
+
+
+        if(!move1){
+            if(last_red < red){
+                if(playerMoving1 != DOWN){
+                    playerMoving1 += 1;
+                }
+                else{
+                    playerMoving1 = LEFT;
+                }
             }
-            else{
-                playerMoving1 = LEFT;
+
+            if(last_red > red){
+                if(playerMoving1 != LEFT){
+                    playerMoving1 -= 1;
+                }
+                else{
+                    playerMoving1 = DOWN;
+                }
             }
         }
 
-        if(last_red > red){
-            if(playerMoving1 != LEFT){
-                playerMoving1 -= 1;
+        if(!move2){
+            if(last_blue < blue){
+                if(playerMoving2 != DOWN){
+                    playerMoving2 += 1;
+                }
+                else{
+                    playerMoving2 = LEFT;
+                }
             }
-            else{
-                playerMoving1 = DOWN;
-            }
-        }
 
-         if(last_blue < blue){
-            if(playerMoving2 != DOWN){
-                playerMoving2 += 1;
-            }
-            else{
-                playerMoving2 = LEFT;
-            }
-        }
-
-        if(last_blue > blue){
-            if(playerMoving2 != LEFT){
-                playerMoving2 -= 1;
-            }
-            else{
-                playerMoving2 = DOWN;
+            if(last_blue > blue){
+                if(playerMoving2 != LEFT){
+                    playerMoving2 -= 1;
+                }
+                else{
+                    playerMoving2 = DOWN;
+                }
             }
         }
 
@@ -362,3 +399,5 @@ int main(int argc, char *argv[]) {
  
     return 0;
 }
+
+
