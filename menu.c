@@ -37,7 +37,7 @@ bool menuPrint(int *player1Color, int *player2Color, int *speed){
     printf("Player 2 choose your color: \n");
     int q = scanf("%d", &*player2Color); 
     if(q!=1) return 1;
-    while(player1Color == player2Color){
+    while(*player1Color == *player2Color){
         printf("Choose different color than Player 1!\nPlayer 2 choose your color:\n");
         int q = scanf("%d", &*player2Color); 
         if(q!=1) return false;
