@@ -1,30 +1,47 @@
+#ifndef MAIN_H
+#define MAIN_H
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+#include <time.h>
+#include <stdbool.h>
+
+//size of the board
+#define ROWS 64
+#define COLS 96
+
+//player values on board
+#define EMPTY 0
+#define PLAYER1 1
+#define PLAYER2 2
+
+//board sturct
 typedef struct rectangle_t{
   int rows;
   int cols;
 } rectangle_t;
 
+//player move directions
 typedef enum playerMove_enum{
-  UP,
-  DOWN,
   LEFT,
-  RIGHT
+  UP,
+  RIGHT,
+  DOWN
 } playerMove_enum;
 
+//player position
 typedef struct position_t{
     int x;
     int y;
 } position_t;
 
+//board 
 typedef struct GameBoard_t{
     int **array;
     rectangle_t size;
 } GameBoard_t;
 
-unsigned int COLORS[6] = {
-    0x0000, //black
-    0xf800, //red
-    0x07c0, //green
-    0x029f, //blue
-    0xffe0, //yellow
-    0xffff, //white
-};
+
+#endif //MAIN_H

@@ -1,4 +1,8 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include "main.h"
 #include "array_functions.h"
+
 
 //size_t matrix_array_length(const rectangle_t size)
 //{

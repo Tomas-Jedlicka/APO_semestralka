@@ -4,21 +4,21 @@
 bool checkKnobs(int last_value, int value, playerMove_enum *playerMoving){
 
     if(last_value == 0 && value == 3){
-        if(*playerMoving != DOWN){
-                *playerMoving += 1;
+         if(*playerMoving != LEFT){
+                *playerMoving -= 1;
             }
             else{
-                *playerMoving = LEFT;
+                *playerMoving = DOWN;
             }
         return true;
     }
     
     if(last_value == 3 && value == 0){
-        if(*playerMoving != LEFT){
-                *playerMoving -= 1;
+        if(*playerMoving != DOWN){
+                *playerMoving += 1;
             }
             else{
-                *playerMoving = DOWN;
+                *playerMoving = LEFT;
             }
         return true;
     }
