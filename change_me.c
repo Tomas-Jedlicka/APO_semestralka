@@ -11,6 +11,8 @@
 #include "mzapo_regs.h"
 #include "font_types.h"
 #include "main.h"
+#include "knobs.h"
+#include "menu.h"
 
 #define ROWS 64
 #define COLS 96
@@ -27,8 +29,6 @@ unsigned int COLORS [6] = {
     0xffe0, //yellow
     0xffff, //white
 };
-
-char* DIRECTIONS[4] = {"LEFT", "UP", "RIGHT", "DOWN"};
 
 //==========================================
 //array functions
@@ -138,30 +138,11 @@ void setStartingPosition(GameBoard_t *gameboard,position_t *positionPlayer1, pos
   //player 2
   positionPlayer2->x = 80;
   positionPlayer2->y = 32;
-    gameboard->array[positionPlayer2->y][positionPlayer2->x] = PLAYER2;
+  gameboard->array[positionPlayer2->y][positionPlayer2->x] = PLAYER2;
 
 
 }
 
-bool checkColor(int playerColor, int test){
-    if(playerColor < 1 || playerColor > 5){
-        return false;
-    }
-    if(test != 1){
-        return false;
-    }
-    return true;
-}
-
-bool checkSpeed(int speed, int test){
-    if(speed < 1 || speed > 3){
-        return false;
-    }
-    if(test != 1){
-        return false;
-    }
-    return true;
-}
 
 
 
@@ -179,36 +160,10 @@ int main(int argc, char *argv[]) {
     int i,j;
     unsigned int color;
     unsigned char *mem_base;
-
-
-    printf("Colors: 1-Red, 2-Green, 3-Blue, 4-Yellow, 5-White\n");
-    printf("Player 1 choose your color: \n");
-    int r = scanf("%d", &player1Color);
-
-    if(!checkColor(player1Color, r)){
-        fprintf(stderr, "Wrong input for color\n");
-        return 1;
-    }
-    printf("Player 2 choose your color: \n");
-    int q = scanf("%d", &player2Color); 
-    if(q!=1) return 1;
-    while(player1Color == player2Color){
-        printf("Choose different color than Player 1!\nPlayer 2 choose your color:\n");
-        int q = scanf("%d", &player2Color); 
-        if(q!=1) return 1;
-    }
-    if(!checkColor(player2Color, r)){
-        fprintf(stderr, "Wrong input for color\n");
-        return 1;
-    };
-
-
     int speed;
-    printf("Speed: 1-Slow, 2-Medium, 3-Fast\n");
-    printf("Choose speed: \n");
-    int test = scanf("%d", &speed);
-    if(!checkSpeed(speed, test)){
-        fprintf(stderr, "Wrong input for speed!\n");
+
+    
+    if(!menuPrint(&player1Color, &player2Color, &speed)){
         return 1;
     }
     
@@ -236,25 +191,38 @@ int main(int argc, char *argv[]) {
     mem_base = map_phys_address(SPILED_REG_BASE_PHYS, SPILED_REG_SIZE, 0);
 
 
+    uint32_t rgb_knobs_value = *(volatile uint32_t*)(mem_base + SPILED_REG_KNOBS_8BIT_o);
+    
     if (mem_base == NULL)
         exit(1);
     
     int red;
     int blue;
+    int last_red = ((rgb_knobs_value>>16)&0xff)/4%4;
+    int last_blue = (rgb_knobs_value&0xff)/4%4;
     bool player1Won = false;
     bool player2Won = false;
 
-    uint32_t rgb_knobs_value;
-
-
     while (!player1Won && !player2Won) {
 
+        last_red = red;
+        last_blue = blue;
+      
         rgb_knobs_value = *(volatile uint32_t*)(mem_base + SPILED_REG_KNOBS_8BIT_o);
 
-        red = (rgb_knobs_value>>16)&0xff;
-        blue = rgb_knobs_value&0xff;
+        red = ((rgb_knobs_value>>16)&0xff)/4%4;
+        blue = (rgb_knobs_value&0xff)/4%4;
 
-        printf("%d %d\n", red, blue);
+        bool move1 = checkKnobs(last_red, red, &playerMoving1);  
+        bool move2 = checkKnobs(last_blue, blue, &playerMoving2); 
+
+        if(!move1){
+            movePlayer(last_red, red, &playerMoving1);
+        }
+
+        if(!move2){
+            movePlayer(last_blue, blue, &playerMoving2);
+        }        
 
         parlcd_write_cmd(parlcd_mem_base, 0x2c);
         for (i = 0; i < 320 ; i++) {
@@ -286,9 +254,10 @@ int main(int argc, char *argv[]) {
 
             player1Won = true;
         }
+
         switch(speed){
             case 1:
-                usleep(10000000);
+                usleep(100000);
                 break;
             case 2:
                 usleep(50000);
@@ -296,7 +265,6 @@ int main(int argc, char *argv[]) {
             case 3:
                 usleep(10000);
                 break;
-
         }
     }
 
@@ -313,3 +281,5 @@ int main(int argc, char *argv[]) {
  
     return 0;
 }
+
+
