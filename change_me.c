@@ -12,6 +12,7 @@
 #include "font_types.h"
 #include "main.h"
 #include "knobs.h"
+#include "menu.h"
 
 #define ROWS 64
 #define COLS 96
@@ -137,55 +138,11 @@ void setStartingPosition(GameBoard_t *gameboard,position_t *positionPlayer1, pos
   //player 2
   positionPlayer2->x = 80;
   positionPlayer2->y = 32;
-    gameboard->array[positionPlayer2->y][positionPlayer2->x] = PLAYER2;
+  gameboard->array[positionPlayer2->y][positionPlayer2->x] = PLAYER2;
 
 
 }
 
-bool checkColor(int playerColor, int test){
-    if(playerColor < 1 || playerColor > 5){
-        return false;
-    }
-    if(test != 1){
-        return false;
-    }
-    return true;
-}
-
-bool checkSpeed(int speed, int test){
-    if(speed < 1 || speed > 3){
-        return false;
-    }
-    if(test != 1){
-        return false;
-    }
-    return true;
-}
-
-bool checkKnobs(int last_value, int value, playerMove_enum *playerMoving){
-
-    if(last_value == 0 && value == 3){
-        if(playerMoving != DOWN){
-                playerMoving += 1;
-            }
-            else{
-                playerMoving = LEFT;
-            }
-        return true;
-    }
-    
-    if(last_value == 3 && value == 0){
-        if(playerMoving != LEFT){
-                playerMoving -= 1;
-            }
-            else{
-                playerMoving = DOWN;
-            }
-        return true;
-    }
-  
-    return false;
-}
 
 
 
@@ -203,36 +160,10 @@ int main(int argc, char *argv[]) {
     int i,j;
     unsigned int color;
     unsigned char *mem_base;
-
-
-    printf("Colors: 1-Red, 2-Green, 3-Blue, 4-Yellow, 5-White\n");
-    printf("Player 1 choose your color: \n");
-    int r = scanf("%d", &player1Color);
-
-    if(!checkColor(player1Color, r)){
-        fprintf(stderr, "Wrong input for color\n");
-        return 1;
-    }
-    printf("Player 2 choose your color: \n");
-    int q = scanf("%d", &player2Color); 
-    if(q!=1) return 1;
-    while(player1Color == player2Color){
-        printf("Choose different color than Player 1!\nPlayer 2 choose your color:\n");
-        int q = scanf("%d", &player2Color); 
-        if(q!=1) return 1;
-    }
-    if(!checkColor(player2Color, r)){
-        fprintf(stderr, "Wrong input for color\n");
-        return 1;
-    };
-
-
     int speed;
-    printf("Speed: 1-Slow, 2-Medium, 3-Fast\n");
-    printf("Choose speed: \n");
-    int test = scanf("%d", &speed);
-    if(!checkSpeed(speed, test)){
-        fprintf(stderr, "Wrong input for speed!\n");
+
+    
+    if(!menuPrint(&player1Color, &player2Color, &speed)){
         return 1;
     }
     
@@ -272,10 +203,6 @@ int main(int argc, char *argv[]) {
     bool player1Won = false;
     bool player2Won = false;
 
-
-  
-
-
     while (!player1Won && !player2Won) {
 
         last_red = red;
@@ -286,61 +213,16 @@ int main(int argc, char *argv[]) {
         red = ((rgb_knobs_value>>16)&0xff)/4%4;
         blue = (rgb_knobs_value&0xff)/4%4;
 
-        //bool move1 = checkKnobs(last_red, red, &playerMoving1);  
-        //bool move2 = checkKnobs(last_blue, blue, &playerMoving2); 
-        bool move1 = true;
-        bool move2 = true;
-
-        printf("%d %d", move1, move2);   
-
+        bool move1 = checkKnobs(last_red, red, &playerMoving1);  
+        bool move2 = checkKnobs(last_blue, blue, &playerMoving2); 
 
         if(!move1){
-            if(last_red < red){
-                if(playerMoving1 != DOWN){
-                    playerMoving1 += 1;
-                }
-                else{
-                    playerMoving1 = LEFT;
-                }
-            }
-
-            if(last_red > red){
-                if(playerMoving1 != LEFT){
-                    playerMoving1 -= 1;
-                }
-                else{
-                    playerMoving1 = DOWN;
-                }
-            }
+            movePlayer(last_red, red, &playerMoving1);
         }
 
         if(!move2){
-            if(last_blue < blue){
-                if(playerMoving2 != DOWN){
-                    playerMoving2 += 1;
-                }
-                else{
-                    playerMoving2 = LEFT;
-                }
-            }
-
-            if(last_blue > blue){
-                if(playerMoving2 != LEFT){
-                    playerMoving2 -= 1;
-                }
-                else{
-                    playerMoving2 = DOWN;
-                }
-            }
-        }
-
-
-        
-
-
-
-        printf("%d %d\n", red, blue);
-        
+            movePlayer(last_blue, blue, &playerMoving2);
+        }        
 
         parlcd_write_cmd(parlcd_mem_base, 0x2c);
         for (i = 0; i < 320 ; i++) {
@@ -372,6 +254,7 @@ int main(int argc, char *argv[]) {
 
             player1Won = true;
         }
+
         switch(speed){
             case 1:
                 usleep(100000);
@@ -382,7 +265,6 @@ int main(int argc, char *argv[]) {
             case 3:
                 usleep(10000);
                 break;
-
         }
     }
 
