@@ -1,15 +1,7 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
-#include <time.h>
-#include <unistd.h>
-#include <stdbool.h>
- 
 #include "mzapo_parlcd.h"
 #include "mzapo_phys.h"
 #include "mzapo_regs.h"
-#include "font_types.h"
+#include "font_types.h" 
 #include "main.h"
 #include "knobs.h"
 #include "menu.h"
@@ -18,7 +10,7 @@
 #include "RGB.h"
 #include "printWinner.h"
 
-
+//Array of colors used for players
 unsigned int COLORS[6] = {
     0x0000, //black
     0xf800, //red
@@ -30,25 +22,27 @@ unsigned int COLORS[6] = {
 
 int main(int argc, char *argv[]) {
 
-
+    //local variables for menu print
     int player1Color;
     int player2Color; 
-    unsigned char *parlcd_mem_base;
-    int i,j;
-    unsigned int color;
-    unsigned char *mem_base;
     int speed;
 
+    //local variables for displey usage
+    unsigned char *parlcd_mem_base;
+    unsigned int color;
+    unsigned char *mem_base;
     
+
+    //printing menu to terminal and receiving colors + speed
     if(!menuPrint(&player1Color, &player2Color, &speed)){
         return 1;
     }
 
-
-
+    //player position init
     position_t positionPlayer1;
     position_t positionPlayer2;
 
+    //setting player directions
     playerMove_enum playerMoving1 = RIGHT;
     playerMove_enum playerMoving2 = LEFT;
 
@@ -57,27 +51,35 @@ int main(int argc, char *argv[]) {
     GameBoard.size.rows = ROWS;
     GameBoard.size.cols = COLS;
 
+    //board alloc
     matrix_alloc(&GameBoard, GameBoard.size);
-    
+
+    //setting player starting position
     setStartingPosition(&GameBoard,&positionPlayer1, &positionPlayer2);
 
+    //setting map adress for display
     parlcd_mem_base = map_phys_address(PARLCD_REG_BASE_PHYS, PARLCD_REG_SIZE, 0);
 
+    //checking if adress is null
     if (parlcd_mem_base == NULL)  exit(1);
 
+    //initializing display
     parlcd_hx8357_init(parlcd_mem_base);
 
+    //initialiying mem base
     mem_base = map_phys_address(SPILED_REG_BASE_PHYS, SPILED_REG_SIZE, 0);
 
+    //checking if mem base is initialized
     if (mem_base == NULL)
         exit(1);
 
+    //setting rbg colors for each player
     RGB1(player1Color, mem_base);
     RGB2(player2Color, mem_base);
 
+    //setting initial knob value
     uint32_t rgb_knobs_value = *(volatile uint32_t*)(mem_base + SPILED_REG_KNOBS_8BIT_o);
 
-    
     int red;
     int blue;
     int last_red = ((rgb_knobs_value>>16)&0xff)/4%4;
@@ -88,30 +90,37 @@ int main(int argc, char *argv[]) {
 
     while (!player1Won && !player2Won) {
         
+        //checking if first round or not
         if(notFirstRound){
             last_red = red;
             last_blue = blue;
         }   
       
+        //getting knobs values
         rgb_knobs_value = *(volatile uint32_t*)(mem_base + SPILED_REG_KNOBS_8BIT_o);
 
+        //setting knob values for each player value
         red = ((rgb_knobs_value>>16)&0xff)/4%4;
         blue = (rgb_knobs_value&0xff)/4%4;
 
+        //checking if any knob moved over the value (3 to 0,...)
         bool move1 = checkKnobs(last_red, red, &playerMoving1);  
         bool move2 = checkKnobs(last_blue, blue, &playerMoving2); 
 
+        //if knob moved setting new value for player 1
         if(!move1){
             movePlayer(last_red, red, &playerMoving1);
         }
 
+        //if knob moved setting new value for player 2
         if(!move2){
             movePlayer(last_blue, blue, &playerMoving2);
         }        
 
+        //function for printing game to display
         parlcd_write_cmd(parlcd_mem_base, 0x2c);
-        for (i = 0; i < 320 ; i++) {
-            for (j = 0; j < 480 ; j++) {
+        for (int i = 0; i < 320 ; i++) {
+            for (int j = 0; j < 480 ; j++) {
                 int ID = GameBoard.array[i/5][j/5];
                 if(ID == EMPTY){
                     color = COLORS[0];
@@ -128,18 +137,20 @@ int main(int argc, char *argv[]) {
             }
         }
 
+        //checking if move for player 1 is valid
         if (!playerMove(&GameBoard, PLAYER1, &positionPlayer1, playerMoving1)) {
 
             player2Won = true; 
 
         }
 
-
+        //checking if move for player 2 is valid
         if (!playerMove(&GameBoard, PLAYER2, &positionPlayer2, playerMoving2)) {
 
             player1Won = true;
         }
 
+        //choosing speed based on picked value in menu
         switch(speed){
             case 1:
                 usleep(100000);
@@ -152,9 +163,12 @@ int main(int argc, char *argv[]) {
                 break;
         }
 
-        notFirstRound = true;
+        //setting that it not first round, if it is -> setting that is over
+        if (!notFirstRound)
+            notFirstRound = true;
     }
 
+    //deciding based on game desision which text to print on display
     if(player1Won && player2Won){
         printf("DRAW!\n");
         printDraw(parlcd_mem_base);
