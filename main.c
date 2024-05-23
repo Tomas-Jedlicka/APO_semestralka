@@ -168,18 +168,18 @@ int main(int argc, char *argv[]) {
             notFirstRound = true;
     }
 
-    //deciding based on game desision which text to print on display
+     //deciding based on game desision which text to print on display
     if(player1Won && player2Won){
         printf("DRAW!\n");
-        printDraw(parlcd_mem_base);
+        print_message("Draw!", 170, 130, 0xffffff, parlcd_mem_base);
     }
-    if (player1Won) {
+    else if (player1Won) {
         printf("Player 1 won!\n");
-        printWinner1(parlcd_mem_base);
+        print_message("Player 1 Won!", 60, 130, 0xffffff, parlcd_mem_base); 
         RGB(player1Color, mem_base);
     } else if (player2Won) {
         printf("Player 2 won!\n");
-        printWinner2(parlcd_mem_base);
+        print_message("Player 2 Won!", 60, 130, 0xffffff, parlcd_mem_base); 
         RGB(player2Color, mem_base);
     }
 
