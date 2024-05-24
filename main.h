@@ -15,6 +15,11 @@
  * -> https://www.avnet.com/wps/portal/us/products/avnet-boards/avnet-board-families/microzed/
  * -> https://gitlab.com/pikron/projects/mz_apo/microzed_apo 
  * 
+ * Program uses the following peripherial components:
+ *  - display
+ *  - encoders
+ *  - RGB diods
+ * 
  * Compilation:
  *  - gcc (arm-linux-gnueabihf-gcc)
  *  - binary package needed (Debian/ubuntu => "crossbuild-essential-armhf")
